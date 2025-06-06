@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Buscar Personas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        h1 {
+            color: #2c3e50;
+        }
+
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+        }
+
+        h3 {
+            color: #555;
+            margin-top: 20px;
+        }
+
+        label {
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 8px;
+            margin-top: 20px;
+        }
+
+        input[type="text"] {
+            padding: 8px;
+            width: 250px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 8px 16px;
+            margin-left: 8px;
+            background-color: #2980b9;
+            border: none;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #3498db;
+        }
+
+        table {
+            margin-top: 20px;
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #2980b9;
+            color: white;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        /* Estilo para el instructivo SQL */
+        .instructivo {
+            margin-top: 20px;
+            background-color: #272822;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: Consolas, "Courier New", monospace;
+            white-space: pre-wrap; /* para que se mantenga el formato y salte de línea */
+        }
+    </style>
+</head>
+<body>
+<h1>Buscar Personas</h1>
+<h2>Gente que busca gente :D</h2>
+<h3>Anotacion: es un buscador de persona, en tu base de datos tenes que tener personas ingresadas</h3>
+<br>
+<h3>Si no tenes personas ingresadas, ingresa este sql a tu base de datos para probar</h3>
+
+<div class="instructivo">
+    Tu base de datos MySQL debe llamarse "db_persona" <br>
+    INSERT INTO localidad (id, denominacio) VALUES (1, 'Santa Fe');<br>
+    INSERT INTO domicilio (id, calle, numero, fk_localidad) VALUES (2, 'Calle 4', 123, 1);<br>
+    INSERT INTO persona (id, nombre, apellido, dni, fk_domicilio) VALUES (1, 'Manuel', 'Ortiz', 33333, 2);
+</div>
+
+<label for="filtro">Buscar por nombre o apellido:</label>
+<input type="text" id="filtro" placeholder="Ingrese nombre o apellido">
+<button onclick="buscarPersonas()">Buscar</button>
+
+<h2>Resultados</h2>
+<table border="1" id="tablaPersonas">
+    <tr>
+        <th>Nombre</th>
+        <th>Apellido</th>
+        <th>DNI</th>
+    </tr>
+</table>
+
+<script>
+    function buscarPersonas() {
+        const filtro = document.getElementById("filtro").value;
+
+        if (!filtro.trim()) {
+            alert("Ingrese un filtro de búsqueda.");
+            return;
+        }
+
+        fetch(`http://localhost:8080/api/v1/personas/search?filtro=${encodeURIComponent(filtro)}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Error al obtener datos");
+                }
+                return response.json();
+            })
+            .then(personas => {
+                const tabla = document.getElementById("tablaPersonas");
+
+                // Limpia la tabla excepto el encabezado
+                tabla.innerHTML = `
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>DNI</th>
+                    </tr>
+                `;
+
+                if (personas.length === 0) {
+                    const fila = tabla.insertRow();
+                    const celda = fila.insertCell();
+                    celda.colSpan = 3;
+                    celda.textContent = "No se encontraron resultados.";
+                    return;
+                }
+
+                personas.forEach(p => {
+                    const fila = tabla.insertRow();
+                    fila.insertCell().textContent = p.nombre;
+                    fila.insertCell().textContent = p.apellido;
+                    fila.insertCell().textContent = p.dni;
+                });
+            })
+            .catch(error => {
+                alert("Ocurrió un error: " + error.message);
+            });
+    }
+</script>
+</body>
+</html>
